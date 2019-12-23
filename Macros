@@ -1,0 +1,342 @@
+Private Sub inicio()
+
+Application.ScreenUpdating = False
+       
+    Range("O1").Select
+    inicioColumna = ActiveCell.Column
+    Selection.End(xlToRight).Select
+    finColumna = ActiveCell.Column
+    
+    inicioFila = Cells(3, 1).Row
+    
+    ActiveCell.SpecialCells(xlLastCell).Select
+    finFila = ActiveCell.Row
+    
+    Range("A2").Select
+    Range(Selection, ActiveCell.SpecialCells(xlLastCell)).Select
+    
+'asirgnar nombre a rango
+    Range(Selection, ActiveCell.SpecialCells(xlLastCell)).Name = "basem"
+    
+
+'copiar formulas
+' Range(Cells(1, inicioColumna), Cells(1, finColumna)).Select
+' Selection.Copy
+' Range(Cells(inicioFila, inicioColumna), Cells(finFila, finColumna)).Select
+' ActiveSheet.Paste
+
+Call CrearTablaDinamica
+
+Application.ScreenUpdating = True
+
+End Sub
+
+Private Sub CrearTablaDinamica()
+
+Application.ScreenUpdating = False
+
+Dim ws As Worksheet
+Dim pc As PivotCache
+Dim pt As PivotTable
+
+    Sheets.Add
+    
+    hojaTabla = ActiveSheet.Name
+libroTabla = ActiveWorkbook.Name
+'definimos la hoja destino....
+
+Set ws = Worksheets(hojaTabla)
+
+'Creamos la memoria cahce de la TD (Pivot cache)
+
+Set pc = ActiveWorkbook.PivotCaches.Create(xlDatabase, "basem")
+
+'Ahora generamos la TD
+
+Set pt = pc.CreatePivotTable(ws.Range("B3"))
+
+'configuramos la estructura de la TD
+
+With pt
+pt.RowAxisLayout xlTabularRow
+    'llevamos al área de filas el campo 'Departamento'
+
+
+
+
+With .PivotFields("Fecha gestión PO Amazon")
+    .Orientation = xlRowField
+    .Position = 1
+    .Subtotals = Array(False, False, False, False, False, False, False, False, False, False, _
+        False, False)
+        .PivotFilters.Add2 Type:=xlDateBetween, Value1:="01/11/2019", Value2:= _
+        "23/12/2019", WholeDayFilter:=True
+    End With
+
+
+    With .PivotFields("ASIN")
+    .Orientation = xlRowField
+    .Position = 2
+    .Subtotals = Array(False, False, False, False, False, False, False, False, False, False, _
+        False, False)
+    End With
+
+    With .PivotFields("EAN")
+    .Orientation = xlRowField
+    .Position = 3
+    .Subtotals = Array(False, False, False, False, False, False, False, False, False, False, _
+        False, False)
+    End With
+    
+
+    With .PivotFields("Título")
+    .Orientation = xlRowField
+    .Position = 4
+    .Subtotals = Array(False, False, False, False, False, False, False, False, False, False, _
+        False, False)
+    End With
+    
+    'llevamos al área de filtros
+
+    With .PivotFields("Fabricante Definitivo")
+    .Orientation = xlPageField
+    .Position = 1
+    .CurrentPage = "BigBuy"
+    End With
+    
+'    With .PivotFields("Fecha gestión PO Amazon")
+'    .Orientation = xlPageField
+'    .Position = 1
+'    End With
+    
+    'y al área de valores el campo 'Cantidad'... también le damos formato...
+
+    Set campo = .AddDataField(.PivotFields("Cantidad pendiente enviar por proveedor"), "Cant", xlSum)
+
+    campo.NumberFormat = "#,##0.00"
+
+On Error Resume Next
+    With .PivotFields("Cantidad pendiente enviar por proveedor")
+    .Orientation = xlPageField
+    .Position = 1
+    .PivotItems("0").Visible = False 'filtro por valores diferentes de 0
+    End With
+
+'formato tabular
+pt.RowAxisLayout xlTabularRow
+'rellenar todas las filas
+pt.RepeatAllLabels xlRepeatLabels
+
+
+End With
+
+Call copiar_datos_tabla
+
+Application.DisplayAlerts = False
+
+Windows(libroTabla).Activate
+
+ActiveWindow.SelectedSheets.Delete
+
+Application.DisplayAlerts = True
+
+Application.ScreenUpdating = True
+
+End Sub
+
+
+Private Sub copiar_datos_tabla()
+'copiar la tabla a una nueva
+
+Application.ScreenUpdating = False
+
+plantilla = "1576770336318_VendorPOTemplatesKapalua.xlsx"
+
+    nommbreOrigen = ActiveWorkbook.Name
+    
+    Workbooks.Add
+    nommbreDestino = ActiveWorkbook.Name
+    
+    Windows(nommbreOrigen).Activate
+    Range("C4").Select
+    'Selection.End(xlToRight).Select
+    Range(Selection, Selection.End(xlToRight)).Select
+'    ActiveCell.Offset(0, -1).Range("A1").Select
+'    Range(Selection, Selection.End(xlToLeft)).Select
+    Range(Selection, Selection.End(xlDown)).Select
+    Selection.Copy
+    
+    Windows(nommbreDestino).Activate
+    Selection.PasteSpecial Paste:=xlPasteValues, Operation:=xlNone, SkipBlanks _
+        :=False, Transpose:=False
+
+    Range("A1").Select
+    ActiveCell.Offset(0, 2).Range("A1").Select
+    Range(Selection, Selection.End(xlToLeft)).Select
+    Range(Selection, Selection.End(xlDown)).Select
+    
+    Selection.Copy
+    
+'copiar datos a la plantilla
+
+
+    Windows(plantilla).Activate
+    Range("A1").Select
+        Selection.PasteSpecial Paste:=xlPasteValues, Operation:=xlNone, SkipBlanks _
+        :=False, Transpose:=False
+    
+    Windows(nommbreDestino).Activate
+    Range("A2").Select
+    
+    Selection.End(xlToRight).Select
+    Range(Selection, Selection.End(xlDown)).Select
+    Selection.Copy
+  
+    
+    Windows(plantilla).Activate
+    
+    Range("E2").Select
+            Selection.PasteSpecial Paste:=xlPasteValues, Operation:=xlNone, SkipBlanks _
+        :=False, Transpose:=False
+   
+    
+Application.DisplayAlerts = False
+
+Windows(nommbreDestino).Activate
+
+ActiveWindow.Close
+
+Application.DisplayAlerts = True
+   
+   Call copiar_formulas_plantilla
+   
+Application.ScreenUpdating = True
+    
+End Sub
+
+Private Sub copiar_formulas_plantilla()
+
+ Application.ScreenUpdating = False
+ 
+   ActiveCell.SpecialCells(xlLastCell).Select
+   finFilaPlantilla = ActiveCell.Row
+   finColumnaPlantilla = ActiveCell.Column
+      
+   'Copia la formula de la columna refencia
+   Application.DisplayAlerts = False
+   [D2].Copy
+   Range(Cells(3, 4), Cells(finFilaPlantilla, 4)).Select
+   ActiveSheet.Paste
+    
+'copiar formulas
+ Range(Cells(2, 6), Cells(2, finColumnaPlantilla)).Select
+ Selection.Copy
+ Range(Cells(3, 6), Cells(finFilaPlantilla, finColumnaPlantilla)).Select
+ ActiveSheet.Paste
+ 
+ Application.DisplayAlerts = True
+ Call organizar_adjunto(finFilaPlantilla)
+ ActiveWorkbook.Save
+Application.ScreenUpdating = True
+End Sub
+
+Private Sub organizar_adjunto(finFilaPlantilla)
+
+Application.ScreenUpdating = False
+
+Dim unidades, referencias, valor
+
+unidades = 0
+referencias = 0
+valor = 0
+bodyPlantilla = "Plantilla Correo.xlsx"
+
+FolderName = ActiveWorkbook.Path
+
+nommbreTemplate = ActiveWorkbook.Name
+Workbooks.Add
+nommbreDestino = ActiveWorkbook.Name
+
+Windows(nommbreTemplate).Activate
+
+
+Range(Cells(1, 2), Cells(finFilaPlantilla, 6)).Select
+Selection.Copy
+
+Windows(nommbreDestino).Activate
+
+Selection.PasteSpecial Paste:=xlPasteValues, Operation:=xlNone, SkipBlanks _
+        :=False, Transpose:=False
+
+ Range("A1").Select
+    ActiveCell.SpecialCells(xlLastCell).Select
+    ActiveCell.Offset(1, 0).Range("A1").Select
+    fila = ActiveCell.Row
+    valor = WorksheetFunction.Sum(Cells(2, 5), Cells(fila - 1, 5))
+    unidades = WorksheetFunction.Sum(Cells(2, 4), Cells(fila - 1, 4))
+    referencias = WorksheetFunction.CountA(Cells(2, 3), Cells(fila - 1, 3))
+'
+    Cells.Select
+    Cells.EntireColumn.AutoFit
+
+
+nombre = Format(Now(), "dd-mm-yyyy hh-mm-ss") & "_Kapaula"
+
+
+
+ActiveWorkbook.SaveAs Filename:= _
+        FolderName & "\" & nombre & ".xlsx" _
+        , FileFormat:=xlOpenXMLWorkbook, CreateBackup:=False
+
+    Range("A1").Select
+nombreAdjunto = ActiveWorkbook.FullName
+
+    ActiveWorkbook.Close
+
+Windows(bodyPlantilla).Activate
+
+Range("B3").Value = "PENDIENTE"
+Range("B4").Value = unidades
+Range("B5").Value = referencias
+Range("B6").Value = valor
+
+Call ENVIACORREO(nombreAdjunto, bodyPlantilla)
+
+Application.ScreenUpdating = True
+
+End Sub
+
+Private Sub ENVIACORREO(nombreAdjunto, bodyPlantilla)
+
+Application.ScreenUpdating = False
+    Windows(bodyPlantilla).Activate
+    
+
+    Dim OBJETOLOOK As New Outlook.Application
+    Dim OBJETOCORREO As MailItem
+    Application.DisplayAlerts = False
+    
+    Set OBJETOLOOK = New Outlook.Application
+    Set OBJETOCORREO = OBJETOLOOK.CreateItem(olMailItem)
+    
+    PARA = "FALEXRAMOS@GMAIL.COM"
+    ASUNTO = "Pedido " & Range("B3").Value & " de Emantina a Kapalua"
+    Sheets(1).Select
+    CUERPO = Sheets(1).Cells(1, 3)
+    
+    With OBJETOCORREO
+        .To = PARA
+        .Subject = ASUNTO
+        .Body = CUERPO & Chr(13) & Chr(13) & Chr(13)
+        .Attachments.Add nombreAdjunto
+        .Display
+    End With
+    Set OBJETOCORREO = Nothing
+    Set OBJETOLOOK = Nothing
+
+Application.ScreenUpdating = True
+End Sub
+
+
+
+
