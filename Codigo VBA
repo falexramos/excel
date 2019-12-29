@@ -101,7 +101,7 @@ With .PivotFields("Fecha gestión PO Amazon")
     With .PivotFields("Fabricante Definitivo")
     .Orientation = xlPageField
     .Position = 1
-    .CurrentPage = "BigBuy"
+    .CurrentPage = "Kapalua"
     End With
     
 '    With .PivotFields("Fecha gestión PO Amazon")
@@ -271,11 +271,10 @@ Selection.PasteSpecial Paste:=xlPasteValues, Operation:=xlNone, SkipBlanks _
  Range("A1").Select
     ActiveCell.SpecialCells(xlLastCell).Select
     ActiveCell.Offset(1, 0).Range("A1").Select
-    fila = ActiveCell.Row
-    valor = WorksheetFunction.Sum(Cells(2, 5), Cells(fila - 1, 5))
-    unidades = WorksheetFunction.Sum(Cells(2, 4), Cells(fila - 1, 4))
-    referencias = WorksheetFunction.CountA(Cells(2, 3), Cells(fila - 1, 3))
-'
+    FILA = ActiveCell.Row
+    valor = WorksheetFunction.Sum(Range("E2:E" & FILA))
+    unidades = WorksheetFunction.Sum(Range("D2:D" & FILA))
+    referencias = WorksheetFunction.CountA(Range("C2:C" & FILA))
     Cells.Select
     Cells.EntireColumn.AutoFit
 
@@ -307,17 +306,18 @@ Application.ScreenUpdating = True
 End Sub
 
 Private Sub ENVIACORREO(nombreAdjunto, bodyPlantilla)
-
 Application.ScreenUpdating = False
     Windows(bodyPlantilla).Activate
     
+    Dim OBJETOLOOK As Object
+    Dim OBJETOCORREO As Object
 
-    Dim OBJETOLOOK As New Outlook.Application
-    Dim OBJETOCORREO As MailItem
+           
     Application.DisplayAlerts = False
     
-    Set OBJETOLOOK = New Outlook.Application
-    Set OBJETOCORREO = OBJETOLOOK.CreateItem(olMailItem)
+    Set OBJETOLOOK = CreateObject("Outlook.Application")
+    Set OBJETOCORREO = OBJETOLOOK.CreateItem(0)
+    
     
     PARA = "FALEXRAMOS@GMAIL.COM"
     ASUNTO = "Pedido " & Range("B3").Value & " de Emantina a Kapalua"
@@ -336,6 +336,8 @@ Application.ScreenUpdating = False
 
 Application.ScreenUpdating = True
 End Sub
+
+
 
 
 
